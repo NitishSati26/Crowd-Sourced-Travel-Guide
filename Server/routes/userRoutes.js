@@ -5,6 +5,7 @@ import {
   loginUser,
   getUser,
   changeAvatar,
+  editUser,
 } from "../controllers/userControllers.js";
 import path from "path";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -48,33 +49,7 @@ router.post(
   authMiddleware,
   upload.single("avatar"),
   changeAvatar
-  // async (req, res, next) => {
-  //   // console.log("File uploaded:", req.file); // Check if the file is in req.file
-  //   if (req.fileValidationError) {
-  //     return res.status(400).send(req.fileValidationError);
-  //   }
-  //   if (!req.file) {
-  //     return res.status(400).json({ message: "No file uploaded" });
-  //   }
-
-  //   // console.log("File uploaded:", req.file); // Check the uploaded file
-  //   const avatarPath = req.file.path; // Get the path of the uploaded file
-
-  //   const updatedUser = await User.findByIdAndUpdate(
-  //     req.user.id,
-  //     { avatar: avatarPath },
-  //     { new: true }
-  //   );
-
-  //   if (!updatedUser) {
-  //     return res.status(422).json({ message: "Avatar couldn't be changed" });
-  //   }
-
-  //   res
-  //     .status(200)
-  //     .json({ message: "File Uploaded Successfully", updatedUser });
-  // }
 );
-// router.patch("/edit-user", authMiddleware, editUser);
+router.post("/edit-user", authMiddleware, editUser);
 
 export default router;

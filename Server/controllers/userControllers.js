@@ -247,54 +247,57 @@ const changeAvatar = async (req, res) => {
 // /*========================= edit user details from profile =============*/
 // // POST : api/users/edit-user
 // //protected
-// const editUser = async (req, res, next) => {
-//   try {
-//     const { name, email, currentPassword, newPassword, confirmNewPassword } =
-//       req.body;
-//     if (!name || !email || !currentPassword || !newPassword) {
-//       return next(new HttpError("Fill in all fields.", 422));
-//     }
+const editUser = async (req, res, next) => {
+  try {
+    const { name, email, currentPassword, newPassword, confirmNewPassword } =
+      req.body;
+    if (!name || !email || !currentPassword || !newPassword) {
+      return res.status(422).json({ message: "Fill in all fields." });
+    }
 
-//     //get user from database
-//     const user = await findById(req.user.id);
-//     if (!user) {
-//       return next(new HttpError("User not found.", 403));
-//     }
+    //get user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-//     //make sure new email doesn't already exist
-//     const emailExists = await findOne({ email });
+    //make sure new email doesn't already exist
+    const emailExists = await User.findOne({ email });
 
-//     //we want to update other details with/without changing the email (which is a uniqueid because we use it to login).
-//     if (emailExists && emailExists._id != req.user.id) {
-//       return next(new HttpError("Email already exist.", 422));
-//     }
+    //we want to update other details with/without changing the email (which is a uniqueid because we use it to login).
+    if (emailExists && emailExists._id != req.user.id) {
+      return res.status(422).json({ message: "Email already exist." });
+    }
 
-//     // compare current password to database password
-//     const validateUserPassword = await compare(currentPassword, user.password);
-//     if (!validateUserPassword) {
-//       return next(new HttpError("Invalid current password", 422));
-//     }
+    // compare current password to database password
+    const validateUserPassword = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!validateUserPassword) {
+      return res.status(422).json({ message: "Invalid current password." });
+    }
 
-//     // compare new passwords
-//     if (newPassword !== confirmNewPassword) {
-//       return next(new HttpError("New password do not match.", 422));
-//     }
+    // compare new passwords
+    if (newPassword !== confirmNewPassword) {
+      return res.status(422).json({ message: "New password do not match." });
+    }
 
-//     //hash new password
-//     const salt = await genSalt(10);
-//     const hash = await _hash(newPassword, salt);
+    //hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(newPassword, salt);
 
-//     //update user info in database
-//     const newInfo = await findByIdAndUpdate(
-//       req.user.id,
-//       { name, email, password: hash },
-//       { new: true }
-//     );
-//     res.status(200).json(newInfo);
-//   } catch (error) {
-//     return next(new HttpError(error));
-//   }
-// };
+    //update user info in database
+    const newInfo = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, email, password: hash },
+      { new: true }
+    );
+    res.status(200).json(newInfo);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 // /*========================= Get Authors =============*/
 // // POST : api/users/authors
@@ -308,5 +311,5 @@ const changeAvatar = async (req, res) => {
 //   }
 // };
 
-export { registerUser, loginUser, getUser, changeAvatar };
+export { registerUser, loginUser, getUser, changeAvatar, editUser };
 //  editUser, getAuthors };
