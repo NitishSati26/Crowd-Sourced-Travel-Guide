@@ -1,21 +1,23 @@
-import { verify } from "jsonwebtoken";
-import HttpError from "../models/errorModel";
+// import { verify } from "jsonwebtoken";
+import pkg from "jsonwebtoken";
+const { verify } = pkg;
+// import HttpError from "../models/errorModel";
 
 const authMiddleware = async (req, res, next) => {
-  const Authorization = req.headers.Authorization || req.headers.authorization;
+  const authorization = req.headers.authorization;
 
-  if (Authorization && Authorization.startsWith("Bearer")) {
-    const token = Authorization.split(" ")[1];
-    verify(token, process.env.JWT_SECRET, (err, info) => {
-      if (err) {
-        return next(new HttpError("Unauthorized. Invalid token.", 403));
-      }
-
-      req.user = info;
+  if (authorization && authorization.startsWith("Bearer ")) {
+    const token = authorization.split(" ")[1];
+    try {
+      req.user = verify(token, process.env.JWT_SECRET);
       next();
-    });
+    } catch (err) {
+      return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    }
   } else {
-    return next(new HttpError("Unauthorized. No token", 402));
+    return res
+      .status(401)
+      .json({ message: "Unauthorized. No token provided." });
   }
 };
 

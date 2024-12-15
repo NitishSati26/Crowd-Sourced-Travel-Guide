@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt";
 import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
-// import { unlink } from "fs";
-// import { join } from "path";
-// import { v4 as uuid } from "uuid";
+import { unlink } from "fs/promises";
+import { join } from "path";
+import { v4 as uuid } from "uuid";
+import { log } from "console";
 
 // import {
 //   findOne,
@@ -120,28 +121,35 @@ const getUser = async (req, res, next) => {
 // const changeAvatar = async (req, res, next) => {
 //   try {
 //     if (!req.files.avatar) {
-//       return next(new HttpError("Please choose an image.", 422));
+//       return res.status(422).json({ message: "Please choose an image. " });
 //     }
 
 //     //find the user from database
-//     const user = await findById(req.user.id);
+//     const user = await User.findById(req.user.id);
 
 //     //delete old avatar if exists
 //     if (user.avatar) {
 //       unlink(join(__dirname, "..", "uploads", user.avatar), (err) => {
 //         if (err) {
-//           return next(new HttpError(err));
+//           return res.status(422).json({ message: err.message });
 //         }
+//       });
+//     }
+
+//     // Validate file type
+//     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+//     if (!allowedTypes.includes(avatar.mimetype)) {
+//       return res.status(422).json({
+//         message: "Invalid file type. Please upload a JPG or PNG image.",
 //       });
 //     }
 
 //     const { avatar } = req.files;
 //     //check file size
 //     if (avatar.size > 500000) {
-//       return next(
-//         new HttpError("Profile picture is too big. Should be less than 500kb"),
-//         422
-//       );
+//       return res.status(422).json({
+//         message: "Profile picture is too big. Should be less than 500kb.",
+//       });
 //     }
 
 //     let fileName;
@@ -154,23 +162,87 @@ const getUser = async (req, res, next) => {
 //       splittedFilename[splittedFilename.length - 1];
 //     avatar.mv(join(__dirname, "..", "uploads", newFilename), async (err) => {
 //       if (err) {
-//         return next(new HttpError(err));
+//         return res.status(422).json({ message: err.message });
 //       }
 
-//       const updatedAvatar = await findByIdAndUpdate(
+//       const updatedAvatar = await User.findByIdAndUpdate(
 //         req.user.id,
 //         { avatar: newFilename },
 //         { new: true }
 //       );
 //       if (!updatedAvatar) {
-//         return next(new HttpError("Avatar couldn't be changed.", 422));
+//         return res.status(422).json({ message: "Avatar couldn't be changed" });
 //       }
 //       res.status(200).json(updatedAvatar);
 //     });
 //   } catch (error) {
-//     return next(new HttpError(error));
+//     return res.status(500).json({ message: error.message });
 //   }
 // };
+
+// Utility for validating files
+// const validateFile = (file) => {
+//   const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+//   if (!allowedTypes.includes(file.mimetype)) {
+//     throw new Error("Invalid file type. Please upload a JPG or PNG image.");
+//   }
+//   if (file.size > 500000) {
+//     throw new Error("File size too large. Should be less than 500 KB.");
+//   }
+// };
+
+// Change Avatar Handler
+const changeAvatar = async (req, res) => {
+  try {
+    // Debugging: Check if files are received
+    // console.log("req.files:", req.files);
+
+    const avatar = req.file;
+    console.log(avatar);
+
+    if (!avatar) {
+      return res.status(422).json({ message: "Please choose an image." });
+    }
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    console.log("File type:", avatar.mimetype);
+    if (!allowedTypes.includes(avatar.mimetype)) {
+      return res.status(422).json({
+        message: "Invalid file type. Please upload a JPG or PNG image.",
+      });
+    }
+
+    // Validate file size
+    if (avatar.size > 500000) {
+      return res.status(422).json({
+        message: "Profile picture is too big. Should be less than 500KB.",
+      });
+    }
+
+    // Upload in Database
+    const avatarPath = avatar.path; // Get the path of the uploaded file
+    console.log(`${avatarPath}`);
+
+    // Save the path in the database (for example, in the user model)
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: avatarPath },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(422).json({ message: "Avatar couldn't be changed" });
+    }
+
+    res.status(200).json(updatedUser);
+
+    // Continue with file handling...
+  } catch (error) {
+    console.error("Error in changeAvatar:", error.message);
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 // /*========================= edit user details from profile =============*/
 // // POST : api/users/edit-user
@@ -236,5 +308,5 @@ const getUser = async (req, res, next) => {
 //   }
 // };
 
-export { registerUser, loginUser, getUser };
-//  changeAvatar, editUser, getAuthors };
+export { registerUser, loginUser, getUser, changeAvatar };
+//  editUser, getAuthors };

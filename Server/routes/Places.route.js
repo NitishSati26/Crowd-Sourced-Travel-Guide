@@ -1,28 +1,25 @@
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-const Place = require("../models/Places.model.js");
-const {
+import { Router } from "express";
+import multer, { diskStorage } from "multer";
+import { extname } from "path";
+import { create } from "../models/Places.model.js";
+import {
   getPlaces,
   getPlace,
   updatePlace,
   deletePlace,
-} = require("../controllers/Places.controller.js");
-const router = express.Router();
+} from "../controllers/Places.controller.js";
+const router = Router();
 
 //Get Place Details
 router.get("/", getPlaces);
 
 //Create Place
-const storage = multer.diskStorage({
+const storage = diskStorage({
   destination: (req, file, cb) => {
     cb(null, "Public/Images");
   },
   filename: (req, file, cb) => {
-    cb(
-      null,
-      file.fieldname + "_" + Date.now() + path.extname(file.originalname)
-    );
+    cb(null, file.fieldname + "_" + Date.now() + extname(file.originalname));
   },
 });
 
@@ -31,7 +28,7 @@ const upload = multer({
 });
 
 router.post("/create", upload.single("file"), (req, res) => {
-  Place.create({
+  create({
     file: req.file.filename,
     name: req.body.name,
     placeLocation: req.body.placeLocation,
@@ -50,4 +47,4 @@ router.put("/edit/:id", updatePlace);
 //Delete Hotel
 router.delete("/delete/:id", deletePlace);
 
-module.exports = router;
+export default router;
